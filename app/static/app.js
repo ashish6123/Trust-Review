@@ -60,14 +60,19 @@ async function analyzeText() {
     const text = document.getElementById("review-input").value.trim();
     if (!text) { showToast("Please enter a review."); return; }
 
-    const modelType = document.getElementById("model-type-text").value;
+    const modelSelect = document.getElementById("model-type-text");
+    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+    const modelType = selectedOption.value;
+    const modelName = selectedOption.getAttribute("data-model");
     showLoading("Analyzing review…");
 
     try {
+        const payload = { text, model_type: modelType };
+        if (modelName) payload.model_name = modelName;
         const res = await fetch(`${API}/api/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, model_type: modelType }),
+            body: JSON.stringify(payload),
         });
         if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
         const data = await res.json();
@@ -117,7 +122,9 @@ async function analyzeBulk() {
     showLoading("Processing file…");
 
     try {
-        const res = await fetch(`${API}/api/predict/bulk?model_type=${modelType}`, {
+        const params = new URLSearchParams({ model_type: modelType });
+        if (modelName) params.set("model_name", modelName);
+        const res = await fetch(`${API}/api/predict/bulk?${params.toString()}`, {
             method: "POST",
             body: formData,
         });
@@ -137,15 +144,19 @@ async function analyzeURL() {
     const url = document.getElementById("url-input").value.trim();
     if (!url) { showToast("Please enter a URL."); return; }
 
-    const modelType = document.getElementById("model-type-url").value;
-    const modelName = document.getElementById("model-type-url").options[document.getElementById("model-type-url").selectedIndex].getAttribute("data-model");
+    const modelSelect = document.getElementById("model-type-url");
+    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+    const modelType = selectedOption.value;
+    const modelName = selectedOption.getAttribute("data-model");
     showLoading("Scraping & analyzing…");
 
     try {
+        const payload = { url, model_type: modelType };
+        if (modelName) payload.model_name = modelName;
         const res = await fetch(`${API}/api/predict/url`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({text: text, model_type: modelType, model_name: modelName})
+            body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
         const data = await res.json();

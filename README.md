@@ -21,13 +21,13 @@ A machine learning system that classifies product reviews as **Real** or **Fake*
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Backend API | FastAPI + Uvicorn |
-| ML Models | Scikit-learn (LR, SVM, Random Forest) |
-| Deep Learning | HuggingFace DistilBERT |
-| Frontend | Vanilla JS + HTML/CSS |
-| Datasets | OPUS Deceptive Opinion Spam, Amazon Reviews, Yelp |
+| Layer         | Technology                                        |
+| ------------- | ------------------------------------------------- |
+| Backend API   | FastAPI + Uvicorn                                 |
+| ML Models     | Scikit-learn (LR, SVM, Random Forest)             |
+| Deep Learning | HuggingFace DistilBERT                            |
+| Frontend      | Vanilla JS + HTML/CSS                             |
+| Datasets      | OPUS Deceptive Opinion Spam, Amazon Reviews, Yelp |
 
 ---
 
@@ -48,6 +48,7 @@ Capstone Project/
 │   │   └── scraper.py         # URL review scraper
 │   ├── static/                # Frontend (HTML, CSS, JS)
 │   └── main.py                # FastAPI app entry point
+├── frontend/                  # React UI (Vite)
 ├── training/
 │   ├── data_pipeline.py       # Load, merge, clean, split datasets
 │   ├── train_ml.py            # Train LR, SVM, Random Forest
@@ -55,7 +56,7 @@ Capstone Project/
 │   ├── compare_models.py      # Evaluate and compare all models
 │   └── eda.py                 # Exploratory data analysis
 ├── datasets/                  # Raw dataset CSVs (not in git)
-├── models/                    # Saved model files (not in git)
+├── models/                    # Saved model files (lightweight ML artifacts)
 ├── tests/                     # Unit tests (60 tests)
 └── requirements.txt
 ```
@@ -64,11 +65,11 @@ Capstone Project/
 
 ## Datasets
 
-| Dataset | Size | Labels | Domain |
-|---------|------|--------|--------|
-| OPUS Deceptive Opinion Spam | ~1,600 reviews | 4-class (deceptive/truthful × polarity) | Hotels |
-| Amazon Product Reviews | 40,000+ reviews | Binary (CG/OR) | E-commerce |
-| Yelp (reference) | 350,000+ reviews | Binary | Restaurants |
+| Dataset                     | Size             | Labels                                  | Domain      |
+| --------------------------- | ---------------- | --------------------------------------- | ----------- |
+| OPUS Deceptive Opinion Spam | ~1,600 reviews   | 4-class (deceptive/truthful × polarity) | Hotels      |
+| Amazon Product Reviews      | 40,000+ reviews  | Binary (CG/OR)                          | E-commerce  |
+| Yelp (reference)            | 350,000+ reviews | Binary                                  | Restaurants |
 
 Training uses 70/15/15 train/validation/test split with stratification by label and source. Models trained on Amazon+OPUS are also tested on Yelp to evaluate **cross-domain generalization**.
 
@@ -92,6 +93,7 @@ pip install -r requirements.txt
 ### 3. Add datasets
 
 Place the following files in the `datasets/` folder:
+
 - `deceptive-opinion.csv` — OPUS Corpus
 - `fake reviews dataset.csv` — Amazon Reviews
 - `yelp_data_train.csv` and `yelp_data_test.csv` — Yelp data
@@ -123,17 +125,46 @@ uvicorn app.main:app --reload
 
 Open [http://localhost:8000](http://localhost:8000) in your browser.
 
+### 6. (Optional) Run the React frontend (dev)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The dev server proxies `/api` to FastAPI (port 8000). Visit [http://localhost:5173](http://localhost:5173).
+
+### 7. Build React for production
+
+```bash
+cd frontend
+npm run build
+```
+
+FastAPI will serve `frontend/dist` automatically when it exists.
+
+### Optional configuration
+
+You can override paths and defaults via environment variables:
+
+- `TRUST_REVIEW_BASE_DIR` — project root (defaults to repo root)
+- `TRUST_REVIEW_DATASETS_DIR` — datasets directory
+- `TRUST_REVIEW_MODELS_DIR` — models directory
+- `TRUST_REVIEW_DEFAULT_ML_MODEL` — default ML model name
+- `TRUST_REVIEW_DEFAULT_MODEL_TYPE` — `"ml"` or `"dl"`
+
 ---
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/predict` | Classify a single review |
-| `POST` | `/api/predict/bulk` | Bulk classify from CSV/XLSX |
-| `POST` | `/api/predict/url` | Scrape and classify from URL |
-| `GET` | `/api/download/{id}` | Download labeled CSV |
-| `GET` | `/api/info` | List available models |
+| Method | Endpoint             | Description                  |
+| ------ | -------------------- | ---------------------------- |
+| `POST` | `/api/predict`       | Classify a single review     |
+| `POST` | `/api/predict/bulk`  | Bulk classify from CSV/XLSX  |
+| `POST` | `/api/predict/url`   | Scrape and classify from URL |
+| `GET`  | `/api/download/{id}` | Download labeled CSV         |
+| `GET`  | `/api/info`          | List available models        |
 
 ### Example Request
 
@@ -147,12 +178,12 @@ curl -X POST http://localhost:8000/api/predict \
 
 ```json
 {
-  "result": {
-    "text": "this product is absolutely amazing best purchase ever",
-    "label": "Fake",
-    "confidence": 0.87,
-    "model_used": "logistic_regression"
-  }
+	"result": {
+		"text": "this product is absolutely amazing best purchase ever",
+		"label": "Fake",
+		"confidence": 0.87,
+		"model_used": "logistic_regression"
+	}
 }
 ```
 
@@ -172,14 +203,14 @@ pytest tests/ -v
 
 > Run `python -m training.compare_models` after training to generate this table.
 
-| Model | Accuracy | F1 | ROC-AUC |
-|-------|----------|-----|---------|
-| Logistic Regression | — | — | — |
-| Linear SVM | — | — | — |
-| Random Forest | — | — | — |
-| DistilBERT (fine-tuned) | — | — | — |
+| Model                   | Accuracy | F1  | ROC-AUC |
+| ----------------------- | -------- | --- | ------- |
+| Logistic Regression     | —        | —   | —       |
+| Linear SVM              | —        | —   | —       |
+| Random Forest           | —        | —   | —       |
+| DistilBERT (fine-tuned) | —        | —   | —       |
 
-*Fill in after running compare_models.py*
+_Fill in after running compare_models.py_
 
 ---
 
@@ -191,7 +222,7 @@ The API can be deployed on [Render](https://render.com) with the following start
 uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-Note: Model files must be generated locally and committed or uploaded separately. DistilBERT requires significant storage — use ML-only mode for free tier deployment.
+Note: Large model files (DistilBERT and random_forest) are not included in git. Lightweight ML artifacts can be generated locally or bundled for deployment as needed.
 
 ---
 

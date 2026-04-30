@@ -1,6 +1,7 @@
 """API route handlers for Trust Review."""
 
 import io
+import time
 import uuid
 import tempfile
 import logging
@@ -9,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 
+from app.core.config import DEFAULT_ML_MODEL
 from app.api.schemas import (
     PredictRequest, PredictResponse, PredictionResult,
     BulkResponse, BulkSummary,
@@ -23,7 +25,21 @@ log = logging.getLogger("trust_review")
 router = APIRouter(prefix="/api")
 
 # Temp storage for downloadable labelled files
-_download_store: dict[str, Path] = {}
+_DOWNLOAD_TTL_SECONDS = 60 * 30
+_download_store: dict[str, tuple[Path, float]] = {}
+
+
+def _cleanup_download_store() -> None:
+    now = time.time()
+    expired_ids = []
+    for download_id, (path, created_at) in _download_store.items():
+        if now - created_at > _DOWNLOAD_TTL_SECONDS or not path.exists():
+            expired_ids.append(download_id)
+
+    for download_id in expired_ids:
+        path, _ = _download_store.pop(download_id)
+        if path.exists():
+            path.unlink()
 
 
 # ── Single review ────────────────────────────────────────
@@ -74,7 +90,8 @@ async def predict_bulk(
     download_id = uuid.uuid4().hex[:12]
     tmp_path = Path(tempfile.gettempdir()) / f"trust_review_{download_id}.csv"
     df.to_csv(tmp_path, index=False)
-    _download_store[download_id] = tmp_path
+    _cleanup_download_store()
+    _download_store[download_id] = (tmp_path, time.time())
 
     return BulkResponse(
         summary=BulkSummary(
@@ -92,8 +109,13 @@ async def predict_bulk(
 @router.get("/download/{download_id}")
 async def download_labelled(download_id: str):
     from fastapi.responses import FileResponse
-    path = _download_store.get(download_id)
-    if path is None or not path.exists():
+    _cleanup_download_store()
+    entry = _download_store.get(download_id)
+    if entry is None:
+        raise HTTPException(404, "File not found or expired.")
+    path, _ = entry
+    if not path.exists():
+        _download_store.pop(download_id, None)
         raise HTTPException(404, "File not found or expired.")
     return FileResponse(path, filename="labelled_reviews.csv", media_type="text/csv")
 
@@ -130,7 +152,7 @@ async def model_info():
     return ModelInfo(
         available_ml_models=model_loader.available_ml_models(),
         dl_available=model_loader.is_dl_available(),
-        default_model="logistic_regression",
+        default_model=DEFAULT_ML_MODEL,
     )
 
 
