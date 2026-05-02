@@ -1,17 +1,22 @@
 """Central configuration – paths, model names, defaults."""
 
+import os
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # e:\Capstone Project
+BASE_DIR = Path(
+    os.getenv("TRUST_REVIEW_BASE_DIR", Path(__file__).resolve().parent.parent.parent)
+)
 
 # ── Directories ──────────────────────────────────────────
-DATASETS_DIR = BASE_DIR / "datasets"
+DATASETS_DIR = Path(os.getenv("TRUST_REVIEW_DATASETS_DIR", BASE_DIR / "datasets"))
 PROCESSED_DIR = DATASETS_DIR / "processed"
-MODELS_DIR = BASE_DIR / "models"
+MODELS_DIR = Path(os.getenv("TRUST_REVIEW_MODELS_DIR", BASE_DIR / "models"))
 DISTILBERT_DIR = MODELS_DIR / "distilbert"
 TRAINING_DIR = BASE_DIR / "training"
 PLOTS_DIR = TRAINING_DIR / "plots"
 STATIC_DIR = BASE_DIR / "app" / "static"
+FRONTEND_DIR = BASE_DIR / "frontend"
+FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
 
 # ── Dataset files ────────────────────────────────────────
 OPUS_CSV = DATASETS_DIR / "deceptive-opinion.csv"
@@ -36,8 +41,8 @@ ML_MODELS = {
     "random_forest": RF_MODEL_PATH,
 }
 
-DEFAULT_ML_MODEL = "svm"
-DEFAULT_MODEL_TYPE = "ml"  # "ml" or "dl"
+DEFAULT_ML_MODEL = os.getenv("TRUST_REVIEW_DEFAULT_ML_MODEL", "svm")
+DEFAULT_MODEL_TYPE = os.getenv("TRUST_REVIEW_DEFAULT_MODEL_TYPE", "ml")  # "ml" or "dl"
 
 # ── DL settings ──────────────────────────────────────────
 DL_MAX_LENGTH = 256

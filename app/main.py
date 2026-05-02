@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.core.config import MODELS_DIR, ML_MODELS, TFIDF_PATH, DISTILBERT_DIR, STATIC_DIR
+from app.core.config import MODELS_DIR, ML_MODELS, TFIDF_PATH, DISTILBERT_DIR, STATIC_DIR, FRONTEND_DIST_DIR
 from app.core.model_loader import load_ml_models, load_dl_model
 from app.api.routes import router as api_router
 
@@ -38,5 +38,6 @@ app = FastAPI(
 # Mount API routes
 app.include_router(api_router)
 
-# Serve frontend static files
-app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
+# Serve frontend static files (prefer React build if present)
+static_dir = FRONTEND_DIST_DIR if FRONTEND_DIST_DIR.exists() else STATIC_DIR
+app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
