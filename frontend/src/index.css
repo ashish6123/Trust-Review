@@ -787,6 +787,82 @@ footer {
 :root[data-theme="light"] .confidence-track {
     background: rgba(15, 23, 42, 0.08);
 }
+/* Buttons that hardcode white text need a darker color on light bg. */
+:root[data-theme="light"] .nav-cta {
+    color: var(--accent);
+    background: rgba(108, 125, 255, 0.1);
+    border-color: var(--border-strong);
+}
+:root[data-theme="light"] .nav-cta:hover {
+    background: rgba(108, 125, 255, 0.18);
+}
+:root[data-theme="light"] .nav-links a:hover {
+    color: var(--accent);
+}
+:root[data-theme="light"] .tab {
+    background: rgba(15, 23, 42, 0.05);
+    color: var(--text-dim);
+    border-color: transparent;
+}
+:root[data-theme="light"] .tab:hover {
+    background: rgba(108, 125, 255, 0.08);
+    color: var(--text);
+}
+:root[data-theme="light"] .tab.active {
+    background: rgba(108, 125, 255, 0.14);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+:root[data-theme="light"] .btn-ghost,
+:root[data-theme="light"] .btn-outline {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: rgba(255, 255, 255, 0.6);
+}
+:root[data-theme="light"] .btn-ghost:hover,
+:root[data-theme="light"] .btn-outline:hover {
+    background: rgba(108, 125, 255, 0.08);
+    color: var(--accent);
+}
+:root[data-theme="light"] .btn-icon {
+    color: var(--text-dim);
+}
+:root[data-theme="light"] .btn-icon:hover {
+    color: var(--accent);
+}
+:root[data-theme="light"] .btn-text {
+    color: var(--text-dim);
+}
+:root[data-theme="light"] .btn-text:hover {
+    color: var(--accent);
+}
+:root[data-theme="light"] .btn-primary {
+    box-shadow: 0 8px 22px rgba(108, 125, 255, 0.25);
+}
+/* History items are darkly tinted in dark mode; soften for light. */
+:root[data-theme="light"] .history-item {
+    background: rgba(15, 23, 42, 0.04);
+    border-color: rgba(99, 119, 176, 0.18);
+}
+:root[data-theme="light"] .history-item:hover {
+    background: rgba(108, 125, 255, 0.08);
+    border-color: var(--accent);
+}
+/* Compare cells / explain card use dark navy bg; tone down for light. */
+:root[data-theme="light"] .compare-cell,
+:root[data-theme="light"] .explain-card {
+    background: rgba(15, 23, 42, 0.03);
+}
+/* Status banner has a dark-mode glow that washes out on light. */
+:root[data-theme="light"] .status-banner {
+    background: rgba(255, 165, 0, 0.16);
+}
+/* The site header logo + nav links use --text which already adapts;
+   make sure the moon/sun toggle icon stays visible. */
+:root[data-theme="light"] .theme-toggle {
+    color: var(--text);
+    border-color: var(--border-strong);
+}
 
 /* ─── Theme toggle ─────────────────────────────────────── */
 .theme-toggle {
