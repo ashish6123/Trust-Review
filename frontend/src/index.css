@@ -522,6 +522,7 @@ input[type="url"]:focus {
 }
 .badge.real { background: var(--green-bg); color: var(--green); }
 .badge.fake { background: var(--red-bg); color: var(--red); }
+.badge.inline { padding: 2px 8px; font-size: 0.66rem; vertical-align: middle; }
 
 .confidence-bar-wrapper {
     display: flex;

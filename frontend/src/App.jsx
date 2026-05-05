@@ -260,7 +260,9 @@ function ExplanationView({ explanation }) {
     <div className="explain-card">
       <h4>Why this label?</h4>
       <p className="subtitle">
-        Tokens that pushed the model toward <strong>{direction}</strong> (red) or away (green).
+        Tokens pushing toward <span className="badge fake inline">Fake</span>{" "}
+        or toward <span className="badge real inline">Real</span>. Predicted:{" "}
+        <strong>{direction}</strong>.
       </p>
       <div className="token-cloud" role="list">
         {explanation.tokens.map((t, idx) => {
@@ -361,13 +363,15 @@ function ComparePanel({
                 <span className="compare-model">{r.modelLabel}</span>
                 {r.error ? (
                   <span className="badge fake">error</span>
-                ) : (
+                ) : r.label ? (
                   <span className={`badge ${r.label.toLowerCase()}`}>{r.label}</span>
+                ) : (
+                  <span className="badge inline">…</span>
                 )}
               </div>
               {r.error ? (
                 <p className="compare-error">{r.error}</p>
-              ) : (
+              ) : r.label ? (
                 <>
                   <div className="confidence-track">
                     <div
@@ -379,6 +383,8 @@ function ComparePanel({
                     {Math.round(r.confidence * 100)}% confident
                   </div>
                 </>
+              ) : (
+                <p className="compare-conf">Running…</p>
               )}
             </div>
           ))}
