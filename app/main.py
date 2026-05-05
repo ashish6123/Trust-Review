@@ -1,14 +1,24 @@
 """Trust Review – FastAPI application entry point."""
 
+from __future__ import annotations
+
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.core.config import MODELS_DIR, ML_MODELS, TFIDF_PATH, DISTILBERT_DIR, STATIC_DIR, FRONTEND_DIST_DIR
-from app.core.model_loader import load_ml_models, load_dl_model
 from app.api.routes import router as api_router
+from app.core.config import (
+    CORS_ORIGINS,
+    DISTILBERT_DIR,
+    FRONTEND_DIST_DIR,
+    ML_MODELS,
+    STATIC_DIR,
+    TFIDF_PATH,
+)
+from app.core.model_loader import load_dl_model, load_ml_models
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,8 +41,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Trust Review",
     description="Fake Review Detection API — classify reviews as Real or Fake",
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan,
+)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 # Mount API routes
