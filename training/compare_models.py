@@ -6,6 +6,7 @@ Usage:
     python -m training.compare_models
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -27,7 +28,7 @@ from sklearn.metrics import (
 from app.core.config import (
     TEST_CSV, MODELS_DIR, TFIDF_PATH,
     LR_MODEL_PATH, SVM_MODEL_PATH, RF_MODEL_PATH, DISTILBERT_DIR,
-    PLOTS_DIR, DL_MAX_LENGTH,
+    PLOTS_DIR, DL_MAX_LENGTH, METRICS_PATH,
 )
 
 
@@ -159,6 +160,25 @@ def main():
 
     # Save table as CSV
     table.to_csv(PLOTS_DIR / "model_comparison.csv", index=False)
+
+    # Save metrics as JSON for the API to surface
+    metrics_payload = {
+        "models": [
+            {
+                "name": r["Model"],
+                "accuracy": float(r["Accuracy"]),
+                "precision": float(r["Precision"]),
+                "recall": float(r["Recall"]),
+                "f1": float(r["F1"]),
+                "roc_auc": float(r["ROC-AUC"]),
+            }
+            for r in results
+        ],
+    }
+    METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with METRICS_PATH.open("w", encoding="utf-8") as f:
+        json.dump(metrics_payload, f, indent=2)
+    print(f"✓ Saved metrics → {METRICS_PATH}")
 
     # ── ROC curves ───────────────────────────────────────
     fig, ax = plt.subplots(figsize=(8, 6))
