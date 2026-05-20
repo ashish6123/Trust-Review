@@ -212,14 +212,14 @@ pytest tests/ -v
 
 > Run `python -m training.compare_models` after training to generate this table.
 
-| Model                   | Accuracy | F1  | ROC-AUC |
-| ----------------------- | -------- | --- | ------- |
-| Logistic Regression     | —        | —   | —       |
-| Linear SVM              | —        | —   | —       |
-| Random Forest           | —        | —   | —       |
-| DistilBERT (fine-tuned) | —        | —   | —       |
+| Model                   | Accuracy | Precision | Recall | F1     | ROC-AUC |
+| ----------------------- | -------- | --------- | ------ | ------ | ------- |
+| 🏆 DistilBERT (fine-tuned) | 90.88%  | 87.94%   | 94.76% | 91.22% | 0.9783  |
+| Linear SVM              | 87.44%   | 87.84%    | 86.91% | 87.37% | 0.9490  |
+| Logistic Regression     | 86.89%   | 88.36%    | 84.98% | 86.63% | 0.9486  |
+| Random Forest           | 83.81%   | 87.42%    | 78.98% | 82.99% | 0.9265  |
 
-_Fill in after running compare_models.py_
+DistilBERT trained for 4 epochs on GPU (40 min) with AMP + gradient accumulation (effective batch 32). Best val F1 achieved at epoch 3 (0.9122).
 
 ---
 
