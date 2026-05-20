@@ -235,8 +235,3 @@ Note: Large model files (DistilBERT and random_forest) are not included in git. 
 
 ---
 
-## Author
-
-**Ashish Ranjan**
-B.S. Computer Science and Data Analytics, IIT Patna
-[LinkedIn](https://linkedin.com/in/ashish-ranjan-40031a284) | [GitHub](https://github.com/ashish6123)
