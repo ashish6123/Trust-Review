@@ -15,7 +15,7 @@ A machine learning system that classifies product reviews as **Real** or **Fake*
 
 ## Demo
 
-> Deploy on Render or Railway and paste the live URL here.
+🚀 **[Live Demo — huggingface.co/spaces/rudra05/trust-review](https://huggingface.co/spaces/rudra05/trust-review)**
 
 ---
 
