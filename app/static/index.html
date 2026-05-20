@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trust Review — Fake Review Detection</title>
+    <meta name="description" content="AI-powered fake review detection system. Classify reviews as real or fake using ML and deep learning models.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ─── Background effects ─────────────────────────────── -->
+<div class="bg-gradient"></div>
+<div class="bg-grid"></div>
+
+<!-- ─── Header ─────────────────────────────────────────── -->
+<header id="header">
+    <div class="logo">
+        <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h1>Trust<span>Review</span></h1>
+    </div>
+    <p class="tagline">AI-Powered Fake Review Detection</p>
+</header>
+
+<!-- ─── Tab navigation ─────────────────────────────────── -->
+<nav id="tab-nav">
+    <button class="tab active" data-tab="text" id="tab-text">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Single Review
+    </button>
+    <button class="tab" data-tab="bulk" id="tab-bulk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Bulk Upload
+    </button>
+    <button class="tab" data-tab="url" id="tab-url">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        URL Scrape
+    </button>
+</nav>
+
+<!-- ─── Main content ───────────────────────────────────── -->
+<main>
+
+    <!-- ── Single review panel ────────── -->
+    <section class="panel active" id="panel-text">
+        <div class="card input-card">
+            <h2>Analyze a Review</h2>
+            <p class="subtitle">Paste any review text to check if it's genuine or fabricated</p>
+            <textarea id="review-input" placeholder="Enter or paste a review here…" rows="5"></textarea>
+            <div class="controls-row">
+                <div class="model-select">
+                    <label for="model-type-text">Engine</label>
+                    <select id="model-type-text">
+                        <option value="ml">ML (Fast)</option>
+                        <option value="dl">Deep Learning</option>
+                    </select>
+                </div>
+                <div class="model-select model-name-group" id="ml-name-group-text">
+                    <label for="model-name-text">Model</label>
+                    <select id="model-name-text">
+                        <option value="">Loading…</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="btn-analyze" onclick="analyzeText()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Analyze
+                </button>
+            </div>
+        </div>
+        <div class="card result-card hidden" id="result-text">
+            <div class="result-header">
+                <h3>Analysis Result</h3>
+                <span class="badge" id="result-badge">—</span>
+            </div>
+            <div class="confidence-bar-wrapper">
+                <div class="confidence-label">Confidence</div>
+                <div class="confidence-track">
+                    <div class="confidence-fill" id="confidence-fill"></div>
+                </div>
+                <div class="confidence-value" id="confidence-value">0%</div>
+            </div>
+            <div class="result-meta" id="result-meta"></div>
+        </div>
+    </section>
+
+    <!-- ── Bulk upload panel ──────────── -->
+    <section class="panel" id="panel-bulk">
+        <div class="card input-card">
+            <h2>Bulk Analysis</h2>
+            <p class="subtitle">Upload a CSV or XLSX file with a "text" column</p>
+            <div class="dropzone" id="dropzone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p>Drag & drop your file here, or <span class="link">browse</span></p>
+                <p class="hint">Supports CSV, XLSX</p>
+                <input type="file" id="file-input" accept=".csv,.xlsx" hidden>
+            </div>
+            <div class="file-info hidden" id="file-info">
+                <span id="file-name"></span>
+                <button class="btn-icon" onclick="clearFile()">✕</button>
+            </div>
+            <div class="controls-row">
+                <div class="model-select">
+                    <label for="model-type-bulk">Engine</label>
+                    <select id="model-type-bulk">
+                        <option value="ml">ML (Fast)</option>
+                        <option value="dl">Deep Learning</option>
+                    </select>
+                </div>
+                <div class="model-select model-name-group" id="ml-name-group-bulk">
+                    <label for="model-name-bulk">Model</label>
+                    <select id="model-name-bulk">
+                        <option value="">Loading…</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="btn-bulk" onclick="analyzeBulk()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Process File
+                </button>
+            </div>
+        </div>
+        <div class="card result-card hidden" id="result-bulk">
+            <div class="result-header">
+                <h3>Bulk Results</h3>
+                <button class="btn btn-outline btn-sm" id="btn-download" onclick="downloadLabelled()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download CSV
+                </button>
+            </div>
+            <div class="bulk-stats" id="bulk-stats"></div>
+            <div class="chart-container">
+                <canvas id="bulk-chart"></canvas>
+            </div>
+            <div class="bulk-table-wrapper">
+                <table id="bulk-table">
+                    <thead><tr><th>#</th><th>Review (preview)</th><th>Label</th><th>Confidence</th></tr></thead>
+                    <tbody id="bulk-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── URL scrape panel ───────────── -->
+    <section class="panel" id="panel-url">
+        <div class="card input-card">
+            <h2>Scrape & Analyze</h2>
+            <p class="subtitle">Enter a URL to scrape reviews and analyze them automatically</p>
+            <div class="url-input-row">
+                <input type="url" id="url-input" placeholder="https://example.com/product/reviews">
+            </div>
+            <div class="controls-row">
+                <div class="model-select">
+                    <label for="model-type-url">Engine</label>
+                    <select id="model-type-url">
+                        <option value="ml">ML (Fast)</option>
+                        <option value="dl">Deep Learning</option>
+                    </select>
+                </div>
+                <div class="model-select model-name-group" id="ml-name-group-url">
+                    <label for="model-name-url">Model</label>
+                    <select id="model-name-url">
+                        <option value="">Loading…</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="btn-url" onclick="analyzeURL()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Scrape & Analyze
+                </button>
+            </div>
+        </div>
+        <div class="card result-card hidden" id="result-url">
+            <div class="result-header">
+                <h3>Scraped Reviews</h3>
+                <span class="reviews-found" id="reviews-found"></span>
+            </div>
+            <div class="bulk-stats" id="url-stats"></div>
+            <div class="chart-container">
+                <canvas id="url-chart"></canvas>
+            </div>
+            <div class="bulk-table-wrapper">
+                <table id="url-table">
+                    <thead><tr><th>#</th><th>Review (preview)</th><th>Label</th><th>Confidence</th></tr></thead>
+                    <tbody id="url-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ─── Loading overlay ───────────────────────────────── -->
+<div class="loading-overlay hidden" id="loading">
+    <div class="spinner"></div>
+    <p id="loading-text">Analyzing…</p>
+</div>
+
+<!-- ─── Toast notification ────────────────────────────── -->
+<div class="toast hidden" id="toast"></div>
+
+<footer>
+    <p>Trust Review v1.0 — Capstone Project &middot; Powered by ML & DistilBERT</p>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>
