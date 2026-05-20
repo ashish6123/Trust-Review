@@ -2,7 +2,7 @@
 Compare all trained models on the held-out test set.
 
 Usage:
-    cd "e:\Capstone Project"
+    cd "e:\\Capstone Project"
     python -m training.compare_models
 """
 

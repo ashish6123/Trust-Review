@@ -36,7 +36,7 @@ def load_opus() -> pd.DataFrame:
 
 def load_amazon() -> pd.DataFrame:
     """Load Amazon fake reviews dataset → binary label."""
-    df = pd.read_csv(AMAZON_CSV)
+    df = pd.read_csv(AMAZON_CSV, on_bad_lines="skip", engine="python")
     # label column has values like 'CG' (computer generated = fake) and 'OR' (original = real)
     df["label"] = df["label"].apply(lambda x: 1 if str(x).strip().upper() == "CG" else 0)
     df["source"] = "amazon"
@@ -50,11 +50,11 @@ def load_yelp() -> pd.DataFrame:
     dfs = []
     for path in [YELP_TRAIN_CSV, YELP_TEST_CSV]:
         if path.exists():
-            # Yelp data often uses tabs
+            # Yelp data often uses tabs; fall back to comma-separated
             try:
-                df = pd.read_csv(path, sep='\t')
+                df = pd.read_csv(path, sep='\t', on_bad_lines="skip", engine="python")
             except Exception:
-                df = pd.read_csv(path)
+                df = pd.read_csv(path, on_bad_lines="skip", engine="python")
             dfs.append(df)
     if not dfs:
         print("⚠  Yelp CSVs not found — skipping.")

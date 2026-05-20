@@ -61,21 +61,27 @@ def load_dl_model(model_dir: Path):
 def get_tfidf():
     return _tfidf
 
+
 def get_ml_model(name: str):
     return _ml_models.get(name)
+
 
 def get_dl_model():
     return _dl_model
 
+
 def get_dl_tokenizer():
     return _dl_tokenizer
+
 
 def get_dl_device():
     """Return the device the DL model is loaded on (or cpu fallback)."""
     return _dl_device or torch.device("cpu")
 
+
 def available_ml_models() -> list:
     return list(_ml_models.keys())
+
 
 def is_dl_available() -> bool:
     return _dl_model is not None
