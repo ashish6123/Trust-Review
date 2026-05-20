@@ -1,0 +1,51 @@
+{
+  "model_name": "distilbert-base-uncased",
+  "max_length": 256,
+  "batch_size": 16,
+  "accumulation_steps": 2,
+  "effective_batch_size": 32,
+  "learning_rate": 2e-05,
+  "epochs_trained": 4,
+  "epochs_max": 4,
+  "early_stopped": false,
+  "best_val_f1": 0.9122,
+  "final_test_accuracy": 0.9088,
+  "final_test_f1": 0.9122,
+  "total_training_time_sec": 2410.0,
+  "device": "cuda",
+  "amp_enabled": true,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.3189,
+      "val_loss": 0.2327,
+      "val_accuracy": 0.8858,
+      "val_f1": 0.8939,
+      "epoch_time_sec": 495.8
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.1905,
+      "val_loss": 0.2024,
+      "val_accuracy": 0.9066,
+      "val_f1": 0.9097,
+      "epoch_time_sec": 629.3
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.1469,
+      "val_loss": 0.2164,
+      "val_accuracy": 0.9088,
+      "val_f1": 0.9122,
+      "epoch_time_sec": 606.1
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.1189,
+      "val_loss": 0.2472,
+      "val_accuracy": 0.9066,
+      "val_f1": 0.9088,
+      "epoch_time_sec": 489.3
+    }
+  ]
+}

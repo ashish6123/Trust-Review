@@ -1,8 +1,10 @@
 """Prediction logic – unified interface for ML and DL models."""
 
 import numpy as np
+import torch
 from app.ml.preprocess import clean_text
 from app.core import model_loader
+from app.core.config import DL_MAX_LENGTH, DL_BATCH_SIZE_INFERENCE
 
 
 LABEL_MAP = {0: "Real", 1: "Fake"}
@@ -23,7 +25,7 @@ def predict_batch(texts: list[str], model_type: str = "ml", model_name: str | No
     cleaned = [clean_text(t) for t in texts]
 
     if model_type == "dl":
-        return [_predict_dl(c) for c in cleaned]
+        return _predict_dl_batch(cleaned)
     else:
         return _predict_ml_batch(cleaned, model_name)
 
@@ -91,22 +93,21 @@ def _predict_ml_batch(texts: list[str], model_name: str | None) -> list[dict]:
 
 # ── DL helpers ───────────────────────────────────────────
 def _predict_dl(text: str) -> dict:
-    import torch
-
+    """Classify a single review using DistilBERT."""
     tokenizer = model_loader.get_dl_tokenizer()
     model = model_loader.get_dl_model()
+    device = model_loader.get_dl_device()
 
     if tokenizer is None or model is None:
         raise RuntimeError("DistilBERT model not loaded.")
 
-    from app.core.config import DL_MAX_LENGTH
     inputs = tokenizer(
         text,
         max_length=DL_MAX_LENGTH,
         truncation=True,
         padding="max_length",
         return_tensors="pt",
-    )
+    ).to(device)
 
     with torch.no_grad():
         outputs = model(**inputs)
@@ -121,3 +122,44 @@ def _predict_dl(text: str) -> dict:
         "confidence": round(confidence, 4),
         "model_used": "distilbert",
     }
+
+
+def _predict_dl_batch(texts: list[str]) -> list[dict]:
+    """Classify a batch of reviews using DistilBERT — much faster than one-at-a-time."""
+    tokenizer = model_loader.get_dl_tokenizer()
+    model = model_loader.get_dl_model()
+    device = model_loader.get_dl_device()
+
+    if tokenizer is None or model is None:
+        raise RuntimeError("DistilBERT model not loaded.")
+
+    results = []
+    batch_size = DL_BATCH_SIZE_INFERENCE
+
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i : i + batch_size]
+
+        inputs = tokenizer(
+            batch_texts,
+            max_length=DL_MAX_LENGTH,
+            truncation=True,
+            padding="max_length",
+            return_tensors="pt",
+        ).to(device)
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+            probas = torch.softmax(outputs.logits, dim=1)
+
+        preds = torch.argmax(probas, dim=1).cpu().numpy()
+        confs = probas.gather(1, torch.argmax(probas, dim=1, keepdim=True)).squeeze(1).cpu().numpy()
+
+        for j, text in enumerate(batch_texts):
+            results.append({
+                "text": text,
+                "label": LABEL_MAP[int(preds[j])],
+                "confidence": round(float(confs[j]), 4),
+                "model_used": "distilbert",
+            })
+
+    return results

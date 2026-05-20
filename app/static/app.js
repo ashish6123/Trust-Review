@@ -9,32 +9,127 @@ let selectedFile = null;
 let lastDownloadId = null;
 let bulkChartInstance = null;
 let urlChartInstance = null;
+let modelInfo = null;  // cached /api/info response
+
+// ── Initialise ──────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+    initTabs();
+    initDropzone();
+    initModelTypeToggles();
+    fetchModelInfo();
+});
+
+// ── Fetch available models from API ─────────────────────
+async function fetchModelInfo() {
+    try {
+        const res = await fetch(`${API}/api/info`);
+        if (!res.ok) throw new Error("API not reachable");
+        modelInfo = await res.json();
+        populateModelDropdowns();
+    } catch (err) {
+        console.warn("Could not fetch model info:", err.message);
+        // Fallback: keep default options
+    }
+}
+
+function populateModelDropdowns() {
+    if (!modelInfo) return;
+
+    const panels = ["text", "bulk", "url"];
+
+    panels.forEach((panel) => {
+        // Populate ML model name dropdown
+        const nameSelect = document.getElementById(`model-name-${panel}`);
+        if (nameSelect) {
+            nameSelect.innerHTML = "";
+            if (modelInfo.available_ml_models.length === 0) {
+                const opt = document.createElement("option");
+                opt.value = "";
+                opt.textContent = "No models trained";
+                opt.disabled = true;
+                opt.selected = true;
+                nameSelect.appendChild(opt);
+            } else {
+                modelInfo.available_ml_models.forEach((name) => {
+                    const opt = document.createElement("option");
+                    opt.value = name;
+                    opt.textContent = formatModelName(name);
+                    if (name === modelInfo.default_model) opt.selected = true;
+                    nameSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // Disable DL option if model not available
+        const typeSelect = document.getElementById(`model-type-${panel}`);
+        if (typeSelect) {
+            const dlOption = typeSelect.querySelector('option[value="dl"]');
+            if (dlOption && !modelInfo.dl_available) {
+                dlOption.disabled = true;
+                dlOption.textContent = "Deep Learning (not trained)";
+            } else if (dlOption && modelInfo.dl_available) {
+                dlOption.disabled = false;
+                dlOption.textContent = "Deep Learning";
+            }
+        }
+    });
+}
+
+function formatModelName(name) {
+    const map = {
+        "logistic_regression": "Logistic Regression",
+        "svm": "SVM (LinearSVC)",
+        "random_forest": "Random Forest",
+    };
+    return map[name] || name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ── Model type toggle (show/hide ML name dropdown) ──────
+function initModelTypeToggles() {
+    const panels = ["text", "bulk", "url"];
+    panels.forEach((panel) => {
+        const typeSelect = document.getElementById(`model-type-${panel}`);
+        const nameGroup = document.getElementById(`ml-name-group-${panel}`);
+
+        if (typeSelect && nameGroup) {
+            typeSelect.addEventListener("change", () => {
+                nameGroup.style.display = typeSelect.value === "ml" ? "" : "none";
+            });
+            // Initial state
+            nameGroup.style.display = typeSelect.value === "ml" ? "" : "none";
+        }
+    });
+}
 
 // ── Tab switching ───────────────────────────────────────
-document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-        document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
-        tab.classList.add("active");
-        document.getElementById(`panel-${tab.dataset.tab}`).classList.add("active");
+function initTabs() {
+    document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+            document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+            document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+            tab.classList.add("active");
+            document.getElementById(`panel-${tab.dataset.tab}`).classList.add("active");
+        });
     });
-});
+}
 
 // ── Dropzone ────────────────────────────────────────────
-const dropzone = document.getElementById("dropzone");
-const fileInput = document.getElementById("file-input");
+function initDropzone() {
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("file-input");
 
-dropzone.addEventListener("click", () => fileInput.click());
-dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
-dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
-dropzone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dropzone.classList.remove("dragover");
-    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener("change", (e) => {
-    if (e.target.files.length) handleFile(e.target.files[0]);
-});
+    dropzone.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+    dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+}
 
 function handleFile(file) {
     const ext = file.name.split(".").pop().toLowerCase();
@@ -45,14 +140,23 @@ function handleFile(file) {
     selectedFile = file;
     document.getElementById("file-name").textContent = file.name;
     document.getElementById("file-info").classList.remove("hidden");
-    dropzone.classList.add("hidden");
+    document.getElementById("dropzone").classList.add("hidden");
 }
 
 function clearFile() {
     selectedFile = null;
-    fileInput.value = "";
+    document.getElementById("file-input").value = "";
     document.getElementById("file-info").classList.add("hidden");
-    dropzone.classList.remove("hidden");
+    document.getElementById("dropzone").classList.remove("hidden");
+}
+
+// ── Helper to get model params for a panel ──────────────
+function getModelParams(panel) {
+    const modelType = document.getElementById(`model-type-${panel}`).value;
+    const modelName = modelType === "ml"
+        ? document.getElementById(`model-name-${panel}`).value
+        : null;
+    return { modelType, modelName };
 }
 
 // ── Single review analysis ──────────────────────────────
@@ -60,19 +164,17 @@ async function analyzeText() {
     const text = document.getElementById("review-input").value.trim();
     if (!text) { showToast("Please enter a review."); return; }
 
-    const modelSelect = document.getElementById("model-type-text");
-    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
-    const modelType = selectedOption.value;
-    const modelName = selectedOption.getAttribute("data-model");
+    const { modelType, modelName } = getModelParams("text");
     showLoading("Analyzing review…");
 
     try {
-        const payload = { text, model_type: modelType };
-        if (modelName) payload.model_name = modelName;
+        const body = { text, model_type: modelType };
+        if (modelName) body.model_name = modelName;
+
         const res = await fetch(`${API}/api/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
         const data = await res.json();
@@ -103,7 +205,7 @@ function displaySingleResult(result) {
     });
 
     document.getElementById("confidence-value").textContent = `${pct}%`;
-    document.getElementById("result-meta").textContent = `Model: ${result.model_used}`;
+    document.getElementById("result-meta").textContent = `Model: ${formatModelName(result.model_used)}`;
 
     card.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
@@ -112,19 +214,17 @@ function displaySingleResult(result) {
 async function analyzeBulk() {
     if (!selectedFile) { showToast("Please upload a file first."); return; }
 
-    const modelSelect = document.getElementById("model-type-bulk");
-    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
-    const modelType = selectedOption.value;
-    const modelName = selectedOption.getAttribute("data-model");
+    const { modelType, modelName } = getModelParams("bulk");
     const formData = new FormData();
     formData.append("file", selectedFile);
+
+    let qs = `model_type=${modelType}`;
+    if (modelName) qs += `&model_name=${modelName}`;
 
     showLoading("Processing file…");
 
     try {
-        const params = new URLSearchParams({ model_type: modelType });
-        if (modelName) params.set("model_name", modelName);
-        const res = await fetch(`${API}/api/predict/bulk?${params.toString()}`, {
+        const res = await fetch(`${API}/api/predict/bulk?${qs}`, {
             method: "POST",
             body: formData,
         });
@@ -144,19 +244,17 @@ async function analyzeURL() {
     const url = document.getElementById("url-input").value.trim();
     if (!url) { showToast("Please enter a URL."); return; }
 
-    const modelSelect = document.getElementById("model-type-url");
-    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
-    const modelType = selectedOption.value;
-    const modelName = selectedOption.getAttribute("data-model");
+    const { modelType, modelName } = getModelParams("url");
     showLoading("Scraping & analyzing…");
 
     try {
-        const payload = { url, model_type: modelType };
-        if (modelName) payload.model_name = modelName;
+        const body = { url, model_type: modelType };
+        if (modelName) body.model_name = modelName;
+
         const res = await fetch(`${API}/api/predict/url`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
         const data = await res.json();

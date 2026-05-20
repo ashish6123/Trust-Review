@@ -170,3 +170,4 @@ def _find_text_column(df: pd.DataFrame) -> str | None:
         avg_lens = {c: df[c].astype(str).str.len().mean() for c in str_cols}
         return max(avg_lens, key=avg_lens.get)
     return None
+

@@ -1,3 +1,12 @@
+---
+title: Trust Review
+emoji: 🔍
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # Trust Review — Fake Review Detection System
 
 A machine learning system that classifies product reviews as **Real** or **Fake** using traditional ML models and a DistilBERT transformer. Built as Capstone Project 2 for B.S. Computer Science and Data Analytics at IIT Patna.

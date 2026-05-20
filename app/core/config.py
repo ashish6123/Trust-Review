@@ -41,9 +41,11 @@ ML_MODELS = {
     "random_forest": RF_MODEL_PATH,
 }
 
-DEFAULT_ML_MODEL = os.getenv("TRUST_REVIEW_DEFAULT_ML_MODEL", "svm")
+DEFAULT_ML_MODEL = os.getenv("TRUST_REVIEW_DEFAULT_ML_MODEL", "logistic_regression")
 DEFAULT_MODEL_TYPE = os.getenv("TRUST_REVIEW_DEFAULT_MODEL_TYPE", "ml")  # "ml" or "dl"
 
 # ── DL settings ──────────────────────────────────────────
 DL_MAX_LENGTH = 256
 DL_MODEL_NAME = "distilbert-base-uncased"
+DL_BATCH_SIZE_INFERENCE = 32
+DL_METRICS_PATH = MODELS_DIR / "distilbert_metrics.json"

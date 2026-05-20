@@ -211,6 +211,19 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
     background-repeat: no-repeat;
     background-position: right 10px center;
     padding-right: 30px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+.model-select select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.model-select select option:disabled {
+    color: var(--text-muted);
+    font-style: italic;
+}
+.model-name-group {
+    transition: opacity 0.25s ease, max-width 0.3s ease;
+    overflow: hidden;
 }
 
 /* ─── Buttons ────────────────────────────────────────── */
