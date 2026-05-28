@@ -9,10 +9,10 @@ import logging
 import re
 import time
 import uuid
-from pathlib import Path
 
 import pandas as pd
 from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile
+from fastapi.responses import FileResponse
 
 from app.api.schemas import (
     BulkResponse,
@@ -20,6 +20,7 @@ from app.api.schemas import (
     ExplainRequest,
     ExplainResponse,
     ModelInfo,
+    ModelType,
     PredictionResult,
     PredictRequest,
     PredictResponse,
@@ -32,6 +33,7 @@ from app.core.config import (
     DEFAULT_ML_MODEL,
     DOWNLOAD_TTL_SECONDS,
     DOWNLOADS_DIR,
+    MAX_BULK_ROWS,
     MAX_UPLOAD_BYTES,
     METRICS_PATH,
 )
@@ -47,13 +49,11 @@ _DOWNLOAD_ID_RE = re.compile(r"^[a-fA-F0-9]{8,32}$")
 # ── Health ───────────────────────────────────────────────
 @router.get("/healthz")
 async def healthz():
-    """Liveness probe — 200 if the process is alive."""
     return {"status": "ok"}
 
 
 @router.get("/readyz")
 async def readyz():
-    """Readiness probe — 200 only if at least one ML model is loaded."""
     if not model_loader.available_ml_models() and not model_loader.is_dl_available():
         raise HTTPException(status_code=503, detail="No models loaded.")
     return {"status": "ready"}
@@ -99,7 +99,7 @@ async def explain_review(req: ExplainRequest):
 @router.post("/predict/bulk", response_model=BulkResponse)
 async def predict_bulk(
     file: UploadFile = File(...),
-    model_type: str = Query("ml"),
+    model_type: ModelType = Query("ml"),
     model_name: str | None = Query(None),
 ):
     filename = file.filename or "upload"
@@ -107,7 +107,6 @@ async def predict_bulk(
     if ext not in ("csv", "xlsx"):
         raise HTTPException(400, "Unsupported file type. Upload a CSV or XLSX file.")
 
-    # Stream the upload while enforcing a hard size cap.
     buffer = io.BytesIO()
     total = 0
     while True:
@@ -132,6 +131,12 @@ async def predict_bulk(
             df = await asyncio.to_thread(pd.read_csv, io.BytesIO(content))
     except Exception:
         raise HTTPException(400, "Could not parse file. Must be CSV or XLSX.")
+
+    if len(df) > MAX_BULK_ROWS:
+        raise HTTPException(
+            413,
+            f"File has too many rows. Limit is {MAX_BULK_ROWS:,} rows.",
+        )
 
     text_col = _find_text_column(df)
     if text_col is None:
@@ -171,8 +176,6 @@ async def predict_bulk(
 # ── Download labelled file ───────────────────────────────
 @router.get("/download/{download_id}")
 async def download_labelled(download_id: str):
-    from fastapi.responses import FileResponse
-
     if not _DOWNLOAD_ID_RE.match(download_id):
         raise HTTPException(400, "Invalid download id.")
     _cleanup_downloads_dir()
@@ -180,7 +183,10 @@ async def download_labelled(download_id: str):
     if not path.exists():
         raise HTTPException(404, "File not found or expired.")
     return FileResponse(
-        path, filename="labelled_reviews.csv", media_type="text/csv"
+        path,
+        filename="labelled_reviews.csv",
+        media_type="text/csv",
+        headers={"Cache-Control": "no-store"},
     )
 
 
@@ -236,8 +242,26 @@ async def model_info(response: Response):
 
 
 # ── Helpers ──────────────────────────────────────────────
+def _cleanup_downloads_dir():
+    cutoff = time.time() - DOWNLOAD_TTL_SECONDS
+    for f in DOWNLOADS_DIR.glob("*.csv"):
+        try:
+            if f.stat().st_mtime < cutoff:
+                f.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _load_metrics() -> dict:
+    try:
+        if METRICS_PATH.exists():
+            return json.loads(METRICS_PATH.read_text())
+    except Exception:
+        pass
+    return {}
+
+
 def _find_text_column(df: pd.DataFrame) -> str | None:
-    """Heuristic to find the review text column."""
     candidates = ["text", "review", "review_text", "comment", "text_", "reviewtext", "body"]
     for c in candidates:
         for col in df.columns:
@@ -248,4 +272,3 @@ def _find_text_column(df: pd.DataFrame) -> str | None:
         avg_lens = {c: df[c].astype(str).str.len().mean() for c in str_cols}
         return max(avg_lens, key=avg_lens.get)
     return None
-

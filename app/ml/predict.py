@@ -24,6 +24,8 @@ def predict_single(text: str, model_type: str = "ml", model_name: str | None = N
 
 def predict_batch(texts: list[str], model_type: str = "ml", model_name: str | None = None) -> list[dict]:
     """Classify a list of reviews."""
+    if not texts:
+        return []
     cleaned = [clean_text(t) for t in texts]
 
     if model_type == "dl":
