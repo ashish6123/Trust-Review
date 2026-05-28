@@ -93,10 +93,12 @@ def main():
         print(f"  Test Accuracy: {acc:.4f}")
         print(classification_report(y_test, y_pred, target_names=["Real", "Fake"]))
 
-        # Save model
+        # Save model — RF uses compress=3 (lossless, ~50% smaller file)
         MODELS_DIR.mkdir(parents=True, exist_ok=True)
-        joblib.dump(model, model_paths[name])
-        print(f"  ✓ Saved → {model_paths[name]}")
+        compress = 3 if name == "random_forest" else 0
+        joblib.dump(model, model_paths[name], compress=compress)
+        size_mb = model_paths[name].stat().st_size / 1e6
+        print(f"  ✓ Saved → {model_paths[name]}  ({size_mb:.1f} MB)")
 
     # Save TF-IDF vectoriser
     joblib.dump(tfidf, TFIDF_PATH)

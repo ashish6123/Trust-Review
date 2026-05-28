@@ -2,12 +2,13 @@
 Compare all trained models on the held-out test set.
 
 Usage:
-    cd "e:\Capstone Project"
+    cd "e:\\Capstone Project"
     python -m training.compare_models
 """
 
 import json
 import sys
+import json
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -28,7 +29,7 @@ from sklearn.metrics import (
 from app.core.config import (
     TEST_CSV, MODELS_DIR, TFIDF_PATH,
     LR_MODEL_PATH, SVM_MODEL_PATH, RF_MODEL_PATH, DISTILBERT_DIR,
-    PLOTS_DIR, DL_MAX_LENGTH, METRICS_PATH,
+    PLOTS_DIR, DL_MAX_LENGTH, DL_METRICS_PATH,
 )
 
 
@@ -111,12 +112,92 @@ def evaluate_dl_model(y_test, test_texts):
         return None
 
 
+def print_dl_training_summary():
+    """Print DistilBERT training history if metrics file exists."""
+    if not DL_METRICS_PATH.exists():
+        return
+
+    print("\n" + "─" * 60)
+    print("  DistilBERT Training Summary")
+    print("─" * 60)
+
+    with open(DL_METRICS_PATH) as f:
+        metrics = json.load(f)
+
+    print(f"  Base model:          {metrics.get('model_name', 'N/A')}")
+    print(f"  Device:              {metrics.get('device', 'N/A')}")
+    print(f"  AMP:                 {'Yes' if metrics.get('amp_enabled') else 'No'}")
+    print(f"  Effective batch:     {metrics.get('effective_batch_size', 'N/A')}")
+    print(f"  Epochs trained:      {metrics.get('epochs_trained', 'N/A')}/{metrics.get('epochs_max', 'N/A')}")
+    print(f"  Early stopped:       {'Yes' if metrics.get('early_stopped') else 'No'}")
+    print(f"  Best val F1:         {metrics.get('best_val_f1', 'N/A')}")
+    print(f"  Final test accuracy: {metrics.get('final_test_accuracy', 'N/A')}")
+    print(f"  Final test F1:       {metrics.get('final_test_f1', 'N/A')}")
+    print(f"  Total time:          {metrics.get('total_training_time_sec', 0) / 60:.1f} min")
+
+    # Epoch-by-epoch history
+    history = metrics.get("history", [])
+    if history:
+        print(f"\n  {'Epoch':>5}  {'Train Loss':>10}  {'Val Loss':>10}  {'Val Acc':>8}  {'Val F1':>8}  {'Time':>6}")
+        print(f"  {'─'*5}  {'─'*10}  {'─'*10}  {'─'*8}  {'─'*8}  {'─'*6}")
+        for h in history:
+            print(f"  {h['epoch']:>5}  {h['train_loss']:>10.4f}  {h['val_loss']:>10.4f}  "
+                  f"{h['val_accuracy']:>8.4f}  {h['val_f1']:>8.4f}  {h['epoch_time_sec']:>5.1f}s")
+
+    return metrics
+
+
+def plot_dl_training_curves(metrics):
+    """Plot training curves from saved DL metrics."""
+    if not metrics or "history" not in metrics:
+        return
+
+    history = metrics["history"]
+    if len(history) < 2:
+        return
+
+    epochs = [h["epoch"] for h in history]
+    train_loss = [h["train_loss"] for h in history]
+    val_loss = [h["val_loss"] for h in history]
+    val_f1 = [h["val_f1"] for h in history]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+    # Loss curves
+    ax1.plot(epochs, train_loss, "o-", color="#6c63ff", linewidth=2, label="Train Loss")
+    ax1.plot(epochs, val_loss, "o-", color="#ff6b6b", linewidth=2, label="Val Loss")
+    ax1.set_xlabel("Epoch")
+    ax1.set_ylabel("Loss")
+    ax1.set_title("DistilBERT — Training & Validation Loss")
+    ax1.legend()
+    ax1.grid(alpha=0.3)
+
+    # F1 curve
+    ax2.plot(epochs, val_f1, "o-", color="#00d68f", linewidth=2, label="Val F1")
+    ax2.set_xlabel("Epoch")
+    ax2.set_ylabel("F1 Score")
+    ax2.set_title("DistilBERT — Validation F1")
+    ax2.legend()
+    ax2.grid(alpha=0.3)
+    ax2.set_ylim(0, 1)
+
+    plt.tight_layout()
+    plt.savefig(PLOTS_DIR / "dl_training_curves.png", dpi=150)
+    plt.close()
+    print("\n✓ Saved dl_training_curves.png")
+
+
 def main():
     print("═" * 60)
     print("  Trust Review — Model Comparison")
     print("═" * 60)
 
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # ── DL training summary ──────────────────────────────
+    dl_metrics = print_dl_training_summary()
+    if dl_metrics:
+        plot_dl_training_curves(dl_metrics)
 
     # ── Load test data ───────────────────────────────────
     test_df = pd.read_csv(TEST_CSV)
@@ -149,6 +230,10 @@ def main():
     if dl_result is not None:
         results.append(dl_result)
 
+    if not results:
+        print("\n⚠ No models found to compare. Train models first.")
+        return
+
     # ── Print comparison table ───────────────────────────
     print("\n" + "═" * 60)
     print("  MODEL COMPARISON")
@@ -157,6 +242,10 @@ def main():
     table = pd.DataFrame([{k: r[k] for k in metrics_cols} for r in results])
     table = table.sort_values("F1", ascending=False)
     print(table.to_string(index=False, float_format=lambda x: f"{x:.4f}"))
+
+    # Highlight best model
+    best = table.iloc[0]
+    print(f"\n  🏆 Best model: {best['Model']} (F1={best['F1']:.4f})")
 
     # Save table as CSV
     table.to_csv(PLOTS_DIR / "model_comparison.csv", index=False)

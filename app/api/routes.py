@@ -249,27 +249,3 @@ def _find_text_column(df: pd.DataFrame) -> str | None:
         return max(avg_lens, key=avg_lens.get)
     return None
 
-
-def _cleanup_downloads_dir() -> None:
-    """Remove expired CSVs from the persistent downloads dir."""
-    if not DOWNLOADS_DIR.exists():
-        return
-    cutoff = time.time() - DOWNLOAD_TTL_SECONDS
-    for path in DOWNLOADS_DIR.glob("*.csv"):
-        try:
-            if path.stat().st_mtime < cutoff:
-                path.unlink()
-        except OSError:
-            continue
-
-
-def _load_metrics() -> dict | None:
-    """Load `models/metrics.json` if present (written by compare_models.py)."""
-    if not METRICS_PATH.exists():
-        return None
-    try:
-        with METRICS_PATH.open("r", encoding="utf-8") as f:
-            return json.load(f)
-    except (OSError, json.JSONDecodeError) as exc:
-        log.warning("Failed to read metrics file %s: %s", METRICS_PATH, exc)
-        return None
