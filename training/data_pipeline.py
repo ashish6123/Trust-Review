@@ -50,7 +50,11 @@ def load_yelp() -> pd.DataFrame:
     dfs = []
     for path in [YELP_TRAIN_CSV, YELP_TEST_CSV]:
         if path.exists():
-            df = pd.read_csv(path, on_bad_lines="skip", engine="python")
+            # Yelp data often uses tabs; fall back to comma-separated
+            try:
+                df = pd.read_csv(path, sep='\t', on_bad_lines="skip", engine="python")
+            except Exception:
+                df = pd.read_csv(path, on_bad_lines="skip", engine="python")
             dfs.append(df)
     if not dfs:
         print("⚠  Yelp CSVs not found — skipping.")

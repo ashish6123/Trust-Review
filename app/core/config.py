@@ -41,23 +41,11 @@ ML_MODELS = {
     "random_forest": RF_MODEL_PATH,
 }
 
-DEFAULT_ML_MODEL = os.getenv("TRUST_REVIEW_DEFAULT_ML_MODEL", "svm")
+DEFAULT_ML_MODEL = os.getenv("TRUST_REVIEW_DEFAULT_ML_MODEL", "logistic_regression")
 DEFAULT_MODEL_TYPE = os.getenv("TRUST_REVIEW_DEFAULT_MODEL_TYPE", "ml")  # "ml" or "dl"
 
 # ── DL settings ──────────────────────────────────────────
 DL_MAX_LENGTH = 256
 DL_MODEL_NAME = "distilbert-base-uncased"
-
-# ── API settings ─────────────────────────────────────────
-# Maximum upload size for /api/predict/bulk (bytes). Default 10 MB.
-MAX_UPLOAD_BYTES = int(os.getenv("TRUST_REVIEW_MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
-# Comma-separated list of allowed origins for CORS. "*" allows all.
-CORS_ORIGINS = [
-    o.strip() for o in os.getenv("TRUST_REVIEW_CORS_ORIGINS", "*").split(",") if o.strip()
-]
-# How long a generated CSV download stays available before being cleaned up.
-DOWNLOAD_TTL_SECONDS = int(os.getenv("TRUST_REVIEW_DOWNLOAD_TTL_SECONDS", str(60 * 30)))
-# Where bulk-labelled CSVs are persisted between request and download.
-DOWNLOADS_DIR = Path(os.getenv("TRUST_REVIEW_DOWNLOADS_DIR", BASE_DIR / "tmp" / "downloads"))
-# Where compare_models.py writes per-model evaluation metrics.
-METRICS_PATH = Path(os.getenv("TRUST_REVIEW_METRICS_PATH", MODELS_DIR / "metrics.json"))
+DL_BATCH_SIZE_INFERENCE = 32
+DL_METRICS_PATH = MODELS_DIR / "distilbert_metrics.json"
