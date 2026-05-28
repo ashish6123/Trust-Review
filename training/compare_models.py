@@ -6,6 +6,7 @@ Usage:
     python -m training.compare_models
 """
 
+import json
 import sys
 import json
 from pathlib import Path
@@ -248,6 +249,25 @@ def main():
 
     # Save table as CSV
     table.to_csv(PLOTS_DIR / "model_comparison.csv", index=False)
+
+    # Save metrics as JSON for the API to surface
+    metrics_payload = {
+        "models": [
+            {
+                "name": r["Model"],
+                "accuracy": float(r["Accuracy"]),
+                "precision": float(r["Precision"]),
+                "recall": float(r["Recall"]),
+                "f1": float(r["F1"]),
+                "roc_auc": float(r["ROC-AUC"]),
+            }
+            for r in results
+        ],
+    }
+    METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with METRICS_PATH.open("w", encoding="utf-8") as f:
+        json.dump(metrics_payload, f, indent=2)
+    print(f"✓ Saved metrics → {METRICS_PATH}")
 
     # ── ROC curves ───────────────────────────────────────
     fig, ax = plt.subplots(figsize=(8, 6))

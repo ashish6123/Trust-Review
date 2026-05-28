@@ -1,5 +1,7 @@
 """Prediction logic – unified interface for ML and DL models."""
 
+from __future__ import annotations
+
 import numpy as np
 import torch
 from app.ml.preprocess import clean_text
@@ -30,6 +32,69 @@ def predict_batch(texts: list[str], model_type: str = "ml", model_name: str | No
         return _predict_ml_batch(cleaned, model_name)
 
 
+def explain_single(
+    text: str,
+    model_type: str = "ml",
+    model_name: str | None = None,
+    top_k: int = 12,
+) -> dict:
+    """Return the prediction together with the top tokens pushing it toward
+    its predicted label.
+
+    For TF-IDF + linear models (LR, SVM) this is computed exactly from
+    `coef_` * `tfidf_row`. For non-linear ML models (RF) we fall back to a
+    TF-IDF magnitude proxy. DL explanations are not supported here and we
+    return the prediction alone.
+    """
+    cleaned = clean_text(text)
+
+    if model_type == "dl":
+        result = _predict_dl(cleaned)
+        result["tokens"] = []
+        result["explanation_kind"] = "unsupported"
+        return result
+
+    from app.core.config import DEFAULT_ML_MODEL
+    name = model_name or DEFAULT_ML_MODEL
+    tfidf = model_loader.get_tfidf()
+    model = model_loader.get_ml_model(name)
+    if tfidf is None or model is None:
+        raise RuntimeError(f"ML model '{name}' or TF-IDF not loaded.")
+
+    pred = _predict_ml(cleaned, name)
+    label_idx = 1 if pred["label"] == "Fake" else 0
+
+    vec = tfidf.transform([cleaned])
+    feature_names = tfidf.get_feature_names_out()
+
+    coef = _linear_coef_for_label(model, label_idx)
+    if coef is not None:
+        # Per-feature contribution toward the predicted class.
+        # vec is sparse 1×F → multiply elementwise with coef row.
+        row = vec.tocoo()
+        contributions = []
+        for j, v in zip(row.col, row.data):
+            contributions.append((str(feature_names[j]), float(v * coef[j])))
+        # Drop zeros, sort by absolute contribution
+        contributions = [c for c in contributions if abs(c[1]) > 1e-9]
+        contributions.sort(key=lambda c: -abs(c[1]))
+        kind = "linear"
+    else:
+        # Fallback: use TF-IDF weight magnitude as a saliency proxy.
+        row = vec.tocoo()
+        contributions = [
+            (str(feature_names[j]), float(v)) for j, v in zip(row.col, row.data)
+        ]
+        contributions.sort(key=lambda c: -abs(c[1]))
+        kind = "tfidf_proxy"
+
+    pred["tokens"] = [
+        {"token": tok, "weight": round(w, 6)} for tok, w in contributions[:top_k]
+    ]
+    pred["explanation_kind"] = kind
+    return pred
+
+
 # ── ML helpers ───────────────────────────────────────────
 def _predict_ml(text: str, model_name: str | None) -> dict:
     from app.core.config import DEFAULT_ML_MODEL
@@ -41,16 +106,7 @@ def _predict_ml(text: str, model_name: str | None) -> dict:
         raise RuntimeError(f"ML model '{name}' or TF-IDF not loaded.")
 
     vec = tfidf.transform([text])
-
-    if hasattr(model, "predict_proba"):
-        proba = model.predict_proba(vec)[0]
-        label_idx = int(np.argmax(proba))
-        confidence = float(proba[label_idx])
-    else:
-        # SVM with decision_function
-        decision = model.decision_function(vec)[0]
-        label_idx = int(model.predict(vec)[0])
-        confidence = float(1 / (1 + np.exp(-abs(decision))))  # sigmoid approximation
+    label_idx, confidence = _ml_label_and_confidence(model, vec)
 
     return {
         "text": text,
@@ -76,9 +132,12 @@ def _predict_ml_batch(texts: list[str], model_name: str | None) -> list[dict]:
         label_indices = np.argmax(probas, axis=1)
         confidences = np.max(probas, axis=1)
     else:
-        decisions = model.decision_function(vec)
-        label_indices = model.predict(vec).astype(int)
-        confidences = 1 / (1 + np.exp(-np.abs(decisions)))
+        # SVM-style fallback: rescale decision_function via a logistic.
+        decisions = np.asarray(model.decision_function(vec)).ravel()
+        label_indices = (decisions >= 0).astype(int)
+        # Two-sided sigmoid keeps confidence in [0.5, 1] for the predicted side
+        # but symmetric around 0 — i.e. low |decision| → low confidence.
+        confidences = 1.0 / (1.0 + np.exp(-np.abs(decisions)))
 
     results = []
     for i, text in enumerate(texts):
@@ -89,6 +148,47 @@ def _predict_ml_batch(texts: list[str], model_name: str | None) -> list[dict]:
             "model_used": name,
         })
     return results
+
+
+def _ml_label_and_confidence(model, vec) -> tuple[int, float]:
+    if hasattr(model, "predict_proba"):
+        proba = model.predict_proba(vec)[0]
+        label_idx = int(np.argmax(proba))
+        return label_idx, float(proba[label_idx])
+
+    decision = float(np.asarray(model.decision_function(vec)).ravel()[0])
+    label_idx = 1 if decision >= 0 else 0
+    confidence = 1.0 / (1.0 + np.exp(-abs(decision)))
+    return label_idx, float(confidence)
+
+
+def _linear_coef_for_label(model, label_idx: int):
+    """Return a 1-D array of per-feature weights toward `label_idx`, or None.
+
+    Works for sklearn `LogisticRegression`, `LinearSVC`, and
+    `CalibratedClassifierCV` wrapping a linear base estimator.
+    """
+    coef = getattr(model, "coef_", None)
+    if coef is None:
+        # CalibratedClassifierCV exposes calibrated_classifiers_ each with .estimator
+        calibrated = getattr(model, "calibrated_classifiers_", None)
+        if calibrated:
+            base = getattr(calibrated[0], "estimator", None) or getattr(
+                calibrated[0], "base_estimator", None
+            )
+            coef = getattr(base, "coef_", None)
+    if coef is None:
+        return None
+
+    coef = np.asarray(coef)
+    if coef.ndim == 1:
+        row = coef
+    elif coef.shape[0] == 1:
+        # Binary classifier with single row – positive coef → class 1 ("Fake")
+        row = coef[0] if label_idx == 1 else -coef[0]
+    else:
+        row = coef[label_idx]
+    return row.ravel()
 
 
 # ── DL helpers ───────────────────────────────────────────

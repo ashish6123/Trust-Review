@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import pandas as pd
 import joblib
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
@@ -57,9 +58,13 @@ def main():
     print(f"  Train matrix: {X_train.shape}")
 
     # ── Models ───────────────────────────────────────────
+    # Wrap LinearSVC in CalibratedClassifierCV so SVM exposes
+    # predict_proba — the API uses these probabilities as confidence.
+    svm_base = LinearSVC(max_iter=2000, C=1.0, random_state=42)
+    svm_calibrated = CalibratedClassifierCV(svm_base, method="sigmoid", cv=5)
     models = {
         "logistic_regression": LogisticRegression(max_iter=1000, C=1.0, random_state=42),
-        "svm": LinearSVC(max_iter=2000, C=1.0, random_state=42),
+        "svm": svm_calibrated,
         "random_forest": RandomForestClassifier(n_estimators=300, max_depth=None, random_state=42, n_jobs=-1),
     }
     model_paths = {
