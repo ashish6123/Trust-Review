@@ -22,7 +22,8 @@ jobs:
         run: |
           git lfs migrate import \
             --include="*.joblib,*.png,*.svg,*.safetensors" \
-            --everything
+            --everything \
+            --yes
 
       - name: Push to Hugging Face Space
         env:
