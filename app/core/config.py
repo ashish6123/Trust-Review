@@ -49,3 +49,9 @@ DL_MAX_LENGTH = 256
 DL_MODEL_NAME = "distilbert-base-uncased"
 DL_BATCH_SIZE_INFERENCE = 32
 DL_METRICS_PATH = MODELS_DIR / "distilbert_metrics.json"
+
+# ── API / download settings ──────────────────────────────
+DOWNLOADS_DIR = BASE_DIR / "tmp" / "downloads"
+DOWNLOAD_TTL_SECONDS = 60 * 30          # 30 minutes
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024     # 10 MB
+METRICS_PATH = MODELS_DIR / "distilbert_metrics.json"
