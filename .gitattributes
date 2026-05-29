@@ -1,2 +1,8 @@
 models/random_forest.joblib filter=lfs diff=lfs merge=lfs -text
 models/distilbert/model.safetensors filter=lfs diff=lfs merge=lfs -text
+models/logistic_regression.joblib filter=lfs diff=lfs merge=lfs -text
+models/svm.joblib filter=lfs diff=lfs merge=lfs -text
+models/tfidf_vectorizer.joblib filter=lfs diff=lfs merge=lfs -text
+frontend/src/assets/*.png filter=lfs diff=lfs merge=lfs -text
+frontend/src/assets/*.svg filter=lfs diff=lfs merge=lfs -text
+frontend/public/*.svg filter=lfs diff=lfs merge=lfs -text

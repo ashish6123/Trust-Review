@@ -21,4 +21,7 @@ jobs:
         run: |
           git config --global user.email "ci@github.com"
           git config --global user.name "GitHub CI"
+          git lfs install
+          git lfs track "*.joblib" "*.png" "*.svg" "*.safetensors"
+          git add .gitattributes
           git push https://rudra05:${HF_TOKEN}@huggingface.co/spaces/rudra05/trust-review HEAD:main --force
