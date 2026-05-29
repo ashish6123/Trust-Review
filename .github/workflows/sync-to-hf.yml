@@ -15,13 +15,19 @@ jobs:
           fetch-depth: 0
           lfs: true
 
+      - name: Install Git LFS
+        run: git lfs install
+
+      - name: Migrate binaries to LFS pointers
+        run: |
+          git lfs migrate import \
+            --include="*.joblib,*.png,*.svg,*.safetensors" \
+            --everything
+
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git config --global user.email "ci@github.com"
           git config --global user.name "GitHub CI"
-          git lfs install
-          git lfs track "*.joblib" "*.png" "*.svg" "*.safetensors"
-          git add .gitattributes
           git push https://rudra05:${HF_TOKEN}@huggingface.co/spaces/rudra05/trust-review HEAD:main --force
