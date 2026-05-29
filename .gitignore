@@ -17,10 +17,6 @@ env/
 .venv/
 .env/
 
-# Model files (large binary files — regenerate locally)
-
-models/distilbert/
-
 # Dataset files (do not commit raw data)
 datasets/*.csv
 datasets/processed/
@@ -55,5 +51,5 @@ htmlcov/
 tmp/
 temp/
 
-# Models
+# Models (large files tracked via LFS)
 models/random_forest.joblib
