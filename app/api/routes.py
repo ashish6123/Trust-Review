@@ -236,6 +236,30 @@ async def model_info(response: Response):
 
 
 # ── Helpers ──────────────────────────────────────────────
+def _load_metrics() -> dict | None:
+    """Load model metrics from JSON file if it exists."""
+    try:
+        if METRICS_PATH.exists():
+            with open(METRICS_PATH) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return None
+
+
+def _cleanup_downloads_dir() -> None:
+    """Remove expired download files."""
+    if not DOWNLOADS_DIR.exists():
+        return
+    now = time.time()
+    for path in DOWNLOADS_DIR.glob("*.csv"):
+        try:
+            if now - path.stat().st_mtime > DOWNLOAD_TTL_SECONDS:
+                path.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
 def _find_text_column(df: pd.DataFrame) -> str | None:
     """Heuristic to find the review text column."""
     candidates = ["text", "review", "review_text", "comment", "text_", "reviewtext", "body"]
