@@ -55,3 +55,8 @@ DOWNLOADS_DIR = BASE_DIR / "tmp" / "downloads"
 DOWNLOAD_TTL_SECONDS = 60 * 30          # 30 minutes
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024     # 10 MB
 METRICS_PATH = MODELS_DIR / "distilbert_metrics.json"
+
+# ── CORS ─────────────────────────────────────────────────
+CORS_ORIGINS: list[str] = os.getenv(
+    "TRUST_REVIEW_CORS_ORIGINS", "*"
+).split(",")
