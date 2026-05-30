@@ -6,7 +6,7 @@ USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
 
-WORKDIR $HOME/app
+WORKDIR $HOME
 
 # Install dependencies first (cached layer)
 COPY --chown=user requirements.txt .
