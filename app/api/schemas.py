@@ -2,17 +2,25 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
+
+from pydantic import BaseModel, Field, field_validator
+
+from app.core.config import MAX_TEXT_CHARS
+
+ModelType = Literal["ml", "dl"]
 
 
 # ── Requests ─────────────────────────────────────────────
 class PredictRequest(BaseModel):
     text: str = Field(
-        ..., min_length=1, description="Review text to classify",
+        ...,
+        min_length=1,
+        max_length=MAX_TEXT_CHARS,
+        description="Review text to classify",
         examples=["This product is absolutely amazing! Best purchase ever!"],
     )
-    model_type: str = Field("ml", description="'ml' or 'dl'")
+    model_type: ModelType = Field("ml", description="'ml' or 'dl'")
     model_name: Optional[str] = Field(
         None, description="Specific ML model name (logistic_regression, svm, random_forest)"
     )
@@ -20,16 +28,29 @@ class PredictRequest(BaseModel):
 
 class URLRequest(BaseModel):
     url: str = Field(
-        ..., description="URL to scrape reviews from",
+        ...,
+        description="URL to scrape reviews from",
         examples=["https://example.com/product/reviews"],
     )
-    model_type: str = Field("ml", description="'ml' or 'dl'")
+    model_type: ModelType = Field("ml", description="'ml' or 'dl'")
     model_name: Optional[str] = Field(None)
+
+    @field_validator("url")
+    @classmethod
+    def url_must_be_http(cls, v: str) -> str:
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("URL must start with http:// or https://")
+        return v
 
 
 class ExplainRequest(BaseModel):
-    text: str = Field(..., min_length=1, description="Review text to explain")
-    model_type: str = Field("ml", description="'ml' or 'dl' (DL not supported)")
+    text: str = Field(
+        ...,
+        min_length=1,
+        max_length=MAX_TEXT_CHARS,
+        description="Review text to explain",
+    )
+    model_type: ModelType = Field("ml", description="'ml' or 'dl' (DL not supported)")
     model_name: Optional[str] = Field(None)
     top_k: int = Field(12, ge=1, le=50, description="Number of tokens to return")
 

@@ -49,6 +49,20 @@ DL_MAX_LENGTH = 256
 DL_MODEL_NAME = "distilbert-base-uncased"
 DL_BATCH_SIZE_INFERENCE = 32
 DL_METRICS_PATH = MODELS_DIR / "distilbert_metrics.json"
+METRICS_PATH = DL_METRICS_PATH  # single source of truth
+
+# ── CORS ─────────────────────────────────────────────────
+_cors_env = os.getenv("TRUST_REVIEW_CORS_ORIGINS", "")
+CORS_ORIGINS = [o.strip() for o in _cors_env.split(",") if o.strip()] or ["*"]
+
+# ── Upload / download ────────────────────────────────────
+MAX_UPLOAD_BYTES = int(os.getenv("TRUST_REVIEW_MAX_UPLOAD_MB", "50")) * 1024 * 1024
+MAX_BULK_ROWS = int(os.getenv("TRUST_REVIEW_MAX_BULK_ROWS", "10000"))
+DOWNLOADS_DIR = BASE_DIR / "tmp" / "downloads"
+DOWNLOAD_TTL_SECONDS = int(os.getenv("TRUST_REVIEW_DOWNLOAD_TTL", "3600"))
+
+# ── Text limits ──────────────────────────────────────────
+MAX_TEXT_CHARS = int(os.getenv("TRUST_REVIEW_MAX_TEXT_CHARS", "5000"))
 
 # ── API / download settings ──────────────────────────────
 DOWNLOADS_DIR = BASE_DIR / "tmp" / "downloads"
