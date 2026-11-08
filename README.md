@@ -221,6 +221,28 @@ pytest tests/ -v
 
 DistilBERT trained for 4 epochs on GPU (40 min) with AMP + gradient accumulation (effective batch 32). Best val F1 achieved at epoch 3 (0.9122).
 
+These are v1 numbers. That run picked its best epoch on the test set; retrained with a proper validation split, the same setup scores 90.58%.
+
+### v2: modern LLM fakes (deployed model)
+
+The v1 model caught only **1%** of fakes written by modern LLMs (DeepSeek-v4). v2 adds 10K DeepSeek-v4 fakes, 10K LFM2.5 fakes and 9.9K healthcare reviews (GP Surgery) to training, with source-balanced loss. GLM-5.2 fakes are kept out of training and used only as an unseen-generator test.
+
+| Test slice | v1 | **v2 (deployed)** |
+| --- | --- | --- |
+| Full v2 test (24,473 reviews) | 60.7% | **93.2%** (AUC 0.988) |
+| GLM-5.2 fakes caught (unseen generator) | 0.7% | **98.3%** |
+| DeepSeek-v4 / LFM2.5 fakes caught | 1.3% / 1.5% | 99.7% / 99.7% |
+| Amazon / OPUS / Yelp (v1 test) | 97.7% / 83.8% / 68.1% | 95.5% / 85.0% / 67.3% |
+| v1 test overall | 90.58% | 88.8% |
+
+Known limitations:
+- v2 flags about 8% of genuine reviews as fake (Amazon and GLM test sets). It trades some precision on genuine reviews for catching modern LLM fakes.
+- GLM fakes used the same prompt protocol as the training fakes, so "unseen" means a new model, not a new generation method.
+- Yelp stays near 68% with text alone, because its labels come from Yelp's behaviour-based filter. Reviewer behaviour features (rating deviation, account age, review counts) reach 88.4% when fused with DistilBERT.
+- Leave-one-source-out transfer is at chance (about 50%): each dataset's "fake" is a different phenomenon.
+
+The deployed DistilBERT ("dl" model type) is v2; the default "ml" option is still the TF-IDF baseline. Full method, tables and reproduction steps: [experiments/RESULTS.md](https://github.com/ashish6123/Trust-Review/blob/master/experiments/RESULTS.md).
+
 ---
 
 ## Deployment
