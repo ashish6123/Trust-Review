@@ -1,0 +1,81 @@
+{
+  "args": {
+    "name": "loso_yelp",
+    "weighted": false,
+    "tag": false,
+    "init": "distilbert-base-uncased",
+    "exclude": "yelp",
+    "epochs": 3,
+    "max_len": 256,
+    "data": "v1"
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "val": {
+        "n": 3362,
+        "acc": 0.9539,
+        "f1": 0.9555,
+        "auc": 0.9948
+      },
+      "val_macro_source_f1": 0.8963,
+      "min": 5.9
+    },
+    {
+      "epoch": 2,
+      "val": {
+        "n": 3362,
+        "acc": 0.9658,
+        "f1": 0.9667,
+        "auc": 0.997
+      },
+      "val_macro_source_f1": 0.9018,
+      "min": 11.8
+    },
+    {
+      "epoch": 3,
+      "val": {
+        "n": 3362,
+        "acc": 0.9744,
+        "f1": 0.9749,
+        "auc": 0.9974
+      },
+      "val_macro_source_f1": 0.9088,
+      "min": 17.6
+    }
+  ],
+  "val": {
+    "overall": {
+      "n": 3362,
+      "acc": 0.9744,
+      "f1": 0.9749,
+      "auc": 0.9974
+    },
+    "amazon": {
+      "n": 3234,
+      "acc": 0.9805,
+      "f1": 0.9808,
+      "auc": 0.9983
+    },
+    "opus": {
+      "n": 128,
+      "acc": 0.8203,
+      "f1": 0.8369,
+      "auc": 0.9062
+    }
+  },
+  "test": {
+    "overall": {
+      "n": 12368,
+      "acc": 0.5096,
+      "f1": 0.0656,
+      "auc": 0.5534
+    },
+    "yelp": {
+      "n": 12368,
+      "acc": 0.5096,
+      "f1": 0.0656,
+      "auc": 0.5534
+    }
+  }
+}
