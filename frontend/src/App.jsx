@@ -45,30 +45,17 @@ const FALLBACK_MODEL_CHOICES = [
 const TEAM_MEMBERS = [
   {
     name: "Ashish Ranjan",
-    role: "ML Lead & Project Architect",
-    bio: "Built the complete ML pipeline, EDA, model training and evaluation, charts, workflow design, and overall project architecture.",
+    role: "Project Lead, ML & Deployment",
+    bio: "Built the ML pipeline, model training and evaluation, the v2 retrain on modern LLM fakes and the robustness experiments, the overall architecture, and the Hugging Face deployment.",
   },
   {
     name: "Gyan Ranjan",
-    role: "Backend Developer",
-    bio: "FastAPI backend, prediction endpoint, model serving, and CSV handling.",
-  },
-  {
-    name: "Disha Ranjan",
-    role: "React Frontend",
-    bio: "Frontend UI, input forms, result display, Chart.js visuals, and URL scraping flow.",
-  },
-  {
-    name: "Miheer Ranjan",
-    role: "Literature & Dataset Research",
-    bio: "Literature review (3 papers), dataset comparison, and rationale for choosing OPUS.",
-  },
-  {
-    name: "Amrit Ranjan",
-    role: "System Design & Documentation",
-    bio: "System architecture, project scope, timeline, and use cases documentation.",
+    role: "Contributor, Backend & UI",
+    bio: "Contributed to the FastAPI backend and prediction endpoint, the review scraper, and UI fixes.",
   },
 ];
+
+const CAPSTONE_TEAM = ["Disha Ranjan", "Miheer Ranjan", "Amrit Ranjan"];
 
 // ── Context ───────────────────────────────────────────────────────────────
 const AppContext = createContext(null);
@@ -452,7 +439,7 @@ function HomePage({ serverInfo }) {
           </p>
           <div className="hero-actions">
             <NavLink className="btn btn-primary" to="/project">Launch Demo</NavLink>
-            <NavLink className="btn btn-ghost" to="/about">Meet the Team</NavLink>
+            <NavLink className="btn btn-ghost" to="/about">About</NavLink>
           </div>
           <div className="hero-metrics">
             {hasMetrics ? (
@@ -932,10 +919,10 @@ function AboutPage() {
     <section className="section">
       <div className="page-header">
         <div>
-          <p className="eyebrow">About Us</p>
-          <h2>Meet the Team</h2>
+          <p className="eyebrow">About</p>
+          <h2>Who Built TrustReview</h2>
           <p className="section-subtitle">
-            A multidisciplinary team combining ML, backend, frontend, and research expertise.
+            Started as an IIT Patna capstone project; built and maintained by Ashish Ranjan.
           </p>
         </div>
       </div>
@@ -951,6 +938,7 @@ function AboutPage() {
           </div>
         ))}
       </div>
+      <p className="section-subtitle">Capstone team members: {CAPSTONE_TEAM.join(", ")}.</p>
     </section>
   );
 }
@@ -1395,7 +1383,7 @@ function App() {
             <nav className={`nav-links${menuOpen ? " open" : ""}`}>
               <NavLink className="nav-link" to="/" onClick={() => setMenuOpen(false)}>Home</NavLink>
               <NavLink className="nav-link" to="/project" onClick={() => setMenuOpen(false)}>Our Project</NavLink>
-              <NavLink className="nav-link" to="/about" onClick={() => setMenuOpen(false)}>About Us</NavLink>
+              <NavLink className="nav-link" to="/about" onClick={() => setMenuOpen(false)}>About</NavLink>
               <div className="nav-bottom-row">
                 <NavLink className="nav-cta nav-cta-mobile" to="/project" onClick={() => setMenuOpen(false)}>
                   Try Demo
