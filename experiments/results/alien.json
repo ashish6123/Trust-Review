@@ -1,0 +1,24 @@
+{
+  "gp_surgery": {
+    "all": {
+      "n": 1000,
+      "acc": 0.797,
+      "f1": 0.7901,
+      "auc": 0.8622
+    },
+    "pred_fake_rate": 0.48,
+    "real_flagged_fake": 0.191,
+    "fake_caught": 0.7844
+  },
+  "modern_llm_fakes": {
+    "genuine_rows_already_in_our_data": 2782,
+    "all_unseen_rows": {
+      "n": 2878,
+      "acc": 0.0358,
+      "f1": 0.0198,
+      "auc": 0.4425
+    },
+    "modern_fakes_caught": 0.01,
+    "genuine_unseen_flagged_fake": 0.0132
+  }
+}
