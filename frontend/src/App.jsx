@@ -55,8 +55,6 @@ const TEAM_MEMBERS = [
   },
 ];
 
-const CAPSTONE_TEAM = ["Disha Ranjan", "Miheer Ranjan", "Amrit Ranjan"];
-
 // ── Context ───────────────────────────────────────────────────────────────
 const AppContext = createContext(null);
 const useApp = () => useContext(AppContext);
@@ -938,7 +936,6 @@ function AboutPage() {
           </div>
         ))}
       </div>
-      <p className="section-subtitle">Capstone team members: {CAPSTONE_TEAM.join(", ")}.</p>
     </section>
   );
 }
